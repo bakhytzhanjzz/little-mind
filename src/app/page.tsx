@@ -26,6 +26,7 @@ export default function Welcome() {
     try {
       await api("/api/demo", { body: { tzOffset: new Date().getTimezoneOffset() } });
       router.replace("/home");
+      setDemoBusy(false);
     } catch (e) {
       setError((e as Error).message);
       setDemoBusy(false);

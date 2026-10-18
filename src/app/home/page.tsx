@@ -6,10 +6,12 @@ import { useCallback, useEffect, useState } from "react";
 import { DayStrip } from "@/components/DayStrip";
 import { InstallHint } from "@/components/InstallHint";
 import { MoodFace } from "@/components/MoodFace";
+import { WeeklySummary } from "@/components/WeeklySummary";
 import { FormError, Loading, Wordmark } from "@/components/ui";
 import { api, pickChild, rememberChild, type Child, type Entry, type Me } from "@/lib/api";
 import { whenLabel } from "@/lib/dates";
 import { MOODS } from "@/lib/moods";
+import { needsAdultAttention } from "@/lib/safety";
 
 function greeting() {
   const h = new Date().getHours();
@@ -67,6 +69,7 @@ export default function Home() {
     try {
       await api("/api/child-mode", { body: { childId: child.id } });
       router.replace("/child");
+      setBusy(false);
     } catch (err) {
       const e = err as Error & { status?: number };
       if (e.status === 409 && !me?.parent.hasPin) return router.replace("/setup");
@@ -89,6 +92,7 @@ export default function Home() {
     );
 
   const last = entries?.[0];
+  const concern = entries?.find((e) => needsAdultAttention(e.note));
 
   return (
     <main className="screen gap-8">
@@ -122,6 +126,20 @@ export default function Home() {
           </div>
         )}
       </section>
+
+      {concern && (
+        <section className="rounded-3xl p-5 ring-2 ring-danger" role="alert">
+          <h2 className="text-[17px] font-semibold">A note needs your attention</h2>
+          <p className="mt-2 text-[15px] leading-relaxed text-ink-2">
+            {whenLabel(new Date(concern.createdAt)).replace(/^\w/, (c) => c.toUpperCase())}, {child.name} wrote something
+            about hurting themself or not wanting to live. Please talk with {child.name} today, calmly and without
+            judgement, and contact the school psychologist or a doctor. If {child.name} is in danger right now, call 112.
+          </p>
+          <Link href="/history" className="mt-3 inline-block text-[15px] font-semibold underline underline-offset-4">
+            Read the note
+          </Link>
+        </section>
+      )}
 
       <section className="card flex flex-col items-center px-6 pt-8 pb-6 text-center">
         <MoodFace mood={last?.mood ?? "good"} tint={last ? undefined : child.color} size={120} />
@@ -159,14 +177,19 @@ export default function Home() {
         {entries ? <DayStrip entries={entries} /> : <div className="h-[120px]" />}
       </section>
 
+      <section>
+        <h2 className="eyebrow mb-4">This week</h2>
+        <WeeklySummary child={child} refreshKey={entries?.[0]?.id ?? ""} />
+      </section>
+
       <section className="flex flex-col gap-3">
-        <Link href="/breathe" className="card flex items-center gap-4 p-4">
+        <Link href="/calm" className="card flex items-center gap-4 p-4">
           <span className="flex size-12 shrink-0 items-center justify-center rounded-full bg-bg">
             <MoodFace mood="good" tint="okay" size={34} />
           </span>
           <span className="flex-1">
-            <span className="block text-[16px] font-semibold">Breathing exercise</span>
-            <span className="block text-[14px] text-ink-2">One calm minute, for you or together</span>
+            <span className="block text-[16px] font-semibold">Calm corner</span>
+            <span className="block text-[14px] text-ink-2">Breathing, grounding and squeeze-and-let-go</span>
           </span>
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-ink-3" aria-hidden>
             <path d="m9 18 6-6-6-6" />

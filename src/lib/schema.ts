@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import { jsonb, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
 
 export const parents = pgTable("parents", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -27,6 +27,17 @@ export const moodEntries = pgTable("mood_entries", {
     .references(() => children.id, { onDelete: "cascade" }),
   mood: text("mood").notNull(),
   tags: text("tags").array().notNull().default([]),
+  note: text("note"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+/** Latest weekly summary per child, reused until new check-ins arrive. */
+export const summaries = pgTable("summaries", {
+  childId: uuid("child_id")
+    .primaryKey()
+    .references(() => children.id, { onDelete: "cascade" }),
+  sourceKey: text("source_key").notNull(),
+  content: jsonb("content").notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
@@ -56,4 +67,11 @@ export const SCHEMA_SQL = [
     created_at timestamptz not null default now()
   )`,
   `create index if not exists mood_entries_child_created on mood_entries (child_id, created_at desc)`,
+  `alter table mood_entries add column if not exists note text`,
+  `create table if not exists summaries (
+    child_id uuid primary key references children(id) on delete cascade,
+    source_key text not null,
+    content jsonb not null,
+    created_at timestamptz not null default now()
+  )`,
 ];

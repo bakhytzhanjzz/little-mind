@@ -5,7 +5,7 @@ export type Me = {
   parent: { name: string; email: string; hasPin: boolean; isDemo: boolean };
   children: Child[];
 };
-export type Entry = { id: string; mood: MoodKey; tags: string[]; createdAt: string };
+export type Entry = { id: string; mood: MoodKey; tags: string[]; note: string | null; createdAt: string };
 
 /** JSON fetch against our API. Throws an Error carrying the server's message. */
 export async function api<T = { ok: true }>(

@@ -2,14 +2,23 @@
 
 A two-minute daily mood check-in for children aged 8–14, with a private mood history for their parent. Built as an installable web app (PWA) for iPhone, Android and desktop.
 
-**MVP scope:** parent sign-up and login (with consent), child mood check-in, mood history visible only to the signed-in parent, and one guided breathing exercise.
+**What's in it:** parent sign-up and login (with consent), child mood check-in with an optional written note, mood history visible only to the signed-in parent, a calm corner with three short exercises, and an optional AI-written weekly summary with conversation starters for the parent.
 
 ## How it works
 
 1. A parent creates an account, adds their child and sets a 4-digit **parent PIN**.
 2. On Home, the parent taps **Hand the phone to …**. The phone switches to **Child mode**.
-3. The child picks a mood, can add what it's about (school, friends, …), and is offered a one-minute breathing exercise.
+3. The child picks a mood, can add what it's about (school, friends, …) and write a note, then is offered the calm corner: balloon breathing, 5-4-3-2-1 grounding, or squeeze-and-let-go.
 4. Leaving Child mode needs the parent PIN, so the history stays with the parent. This is enforced on the server, not only in the UI.
+5. On Home, **This week** writes a short summary of the last 7 days and three questions to start a conversation. It only runs when the parent taps the button.
+
+### Notes and safety
+
+The note screen tells the child plainly that their grown-up can read it. If a note mentions self-harm or not wanting to live (a keyword check in English, Russian and Kazakh, see `src/lib/safety.ts`), the child is gently told to tell a grown-up today, and the parent sees a card on Home with what to do. This is a safety net for free text, not a risk-detection system: it will miss things.
+
+### AI weekly summary
+
+With `GROQ_API_KEY` set, the summary is written by a language model on [Groq](https://console.groq.com) (default model `openai/gpt-oss-120b`, change with `GROQ_MODEL`). The child's name is never sent: the model writes "your child" and the app puts the name back. Moods, topics and notes (trimmed) from the last 7 days are sent. A summary is stored and reused until new check-ins arrive, so the free tier's limits are not a concern. Without a key, or if the call fails, a basic summary built from counts is shown instead.
 
 **Try a demo with sample data** on the welcome screen opens a shared demo account (parent Dana, child Aru, PIN `1234`) with two weeks of check-ins.
 
@@ -31,7 +40,8 @@ Open http://localhost:3000. With no `DATABASE_URL` set, the app uses an embedded
    ```bash
    openssl rand -base64 32
    ```
-5. Deploy. The tables are created automatically on the first request.
+5. Optional, for AI summaries: create a free API key at [console.groq.com](https://console.groq.com/keys) and add it as `GROQ_API_KEY`.
+6. Deploy. Tables (and new columns) are created automatically on the first request.
 
 ## Install on a phone
 
@@ -64,23 +74,25 @@ Plain REST, so a separate backend (for example FastAPI) could replace it without
 | `POST /api/child-mode` | parent | Start Child mode for a child |
 | `GET /api/child-mode` | child mode | Who is checking in |
 | `POST /api/child-mode/exit` | child mode | Leave Child mode with the PIN |
-| `POST /api/moods` | child mode | Record a check-in |
+| `POST /api/moods` | child mode | Record a check-in (mood, topics, optional note) |
 | `GET /api/moods?childId=&days=` | parent | Mood history for one of the parent's own children |
+| `GET /api/summary?childId=` | parent | Stored weekly summary and whether it's out of date |
+| `POST /api/summary` | parent | Write (or reuse) this week's summary |
 | `POST /api/demo` | anyone | Reset and open the demo account |
 
 ### Project layout
 
 ```
 src/
-  app/            screens (welcome, login, signup, setup, home, history, child, breathe) and api/
-  components/     MoodFace (the morphing character), Breathing, PinPad, DayStrip, …
-  lib/            db + schema, session, moods, blob geometry, date helpers
+  app/            screens (welcome, login, signup, setup, home, history, child, calm) and api/
+  components/     MoodFace (the morphing character), Calm exercises, PinPad, DayStrip, WeeklySummary, …
+  lib/            db + schema, session, moods, safety, summary (Groq), blob geometry, date helpers
   proxy.ts        keeps people on the right screen for their session state
 scripts/icons.mts regenerates the app icons from the same blob geometry (npm run icons)
 ```
 
 ## Not in this version
 
-Mood-risk alerts, AI, weekly reports, exports, reminders, gamification and language switching are out of scope for the MVP.
+Automatic mood-risk alerts, an AI chat for children, exports, reminders, gamification and language switching.
 
 Little Mind+ supports conversations about feelings. It is not a medical or diagnostic tool.

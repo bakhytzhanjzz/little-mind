@@ -19,6 +19,7 @@ export default function Login() {
     try {
       await api("/api/auth/login", { body: { email: f.get("email"), password: f.get("password") } });
       router.replace("/home");
+      setBusy(false);
     } catch (err) {
       setError((err as Error).message);
       setBusy(false);

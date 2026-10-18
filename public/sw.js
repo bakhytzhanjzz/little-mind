@@ -1,7 +1,7 @@
 // Little Mind+ service worker: makes the app installable and lets the shell
 // open without a connection. Mood data (/api) is never cached.
-const CACHE = "little-mind-v1";
-const SHELL = ["/breathe", "/icon-192.png", "/icon-512.png"];
+const CACHE = "little-mind-v2";
+const SHELL = ["/calm", "/icon-192.png", "/icon-512.png"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)));
@@ -37,7 +37,7 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Pages: network first, last good copy when offline, breathing as a fallback.
+  // Pages: network first, last good copy when offline, the calm corner as a fallback.
   if (request.mode === "navigate") {
     event.respondWith(
       fetch(request)
@@ -45,7 +45,7 @@ self.addEventListener("fetch", (event) => {
           if (res.ok && !res.redirected) caches.open(CACHE).then((c) => c.put(request, res.clone()));
           return res;
         })
-        .catch(() => caches.match(request).then((hit) => hit || caches.match("/breathe"))),
+        .catch(() => caches.match(request).then((hit) => hit || caches.match("/calm"))),
     );
   }
 });

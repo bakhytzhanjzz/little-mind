@@ -38,11 +38,10 @@ export default function Setup() {
     try {
       const { child } = await api<{ child: Child }>("/api/children", { body: { name, color } });
       rememberChild(child.id);
+      setBusy(false);
+      setName("");
       if (me?.parent.hasPin) router.replace("/home");
-      else {
-        setBusy(false);
-        setStep("pin");
-      }
+      else setStep("pin");
     } catch (err) {
       setError((err as Error).message);
       setBusy(false);

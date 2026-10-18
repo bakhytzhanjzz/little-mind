@@ -20,6 +20,8 @@ export const TAGS = [
 export type TagKey = (typeof TAGS)[number]["key"];
 export const TAG_KEYS = TAGS.map((t) => t.key) as readonly string[];
 
+export const NOTE_MAX = 500;
+
 export const tagLabel = (key: string) =>
   TAGS.find((t) => t.key === key)?.label ?? key;
 

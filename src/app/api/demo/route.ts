@@ -6,25 +6,25 @@ import { body, handler, withSession } from "@/lib/http";
 import type { MoodKey, TagKey } from "@/lib/moods";
 import { children, moodEntries, parents } from "@/lib/schema";
 
-// Two weeks of believable check-ins: [days ago, local hour, mood, tags].
-const SAMPLE: [number, number, MoodKey, TagKey[]][] = [
+// Two weeks of believable check-ins: [days ago, local hour, mood, tags, note?].
+const SAMPLE: [number, number, MoodKey, TagKey[], string?][] = [
   [15, 18.4, "good", ["friends"]],
   [14, 17.9, "great", ["friends", "family"]],
   [13, 19.2, "okay", ["school"]],
   [12, 18.1, "good", []],
-  [11, 20.3, "low", ["school", "sleep"]],
+  [11, 20.3, "low", ["school", "sleep"], "Couldn't fall asleep, keep thinking about the maths test tomorrow."],
   [10, 18.6, "okay", ["school"]],
   [9, 17.5, "good", ["family"]],
-  [8, 16.8, "great", ["friends"]],
+  [8, 16.8, "great", ["friends"], "We played football after school and won 3-1!"],
   [7, 18.9, "good", []],
   [6, 19.6, "okay", ["sleep"]],
-  [5, 8.2, "low", ["school"]],
+  [5, 8.2, "low", ["school"], "Got a bad mark in English even though I studied a lot."],
   [5, 20.1, "okay", ["family"]],
-  [4, 16.4, "upset", ["friends"]],
+  [4, 16.4, "upset", ["friends"], "Madina and Aliya didn't let me sit with them at lunch."],
   [4, 20.5, "good", ["family"]],
   [3, 18.2, "okay", ["school"]],
   [2, 17.7, "good", ["friends"]],
-  [1, 18.8, "great", ["family"]],
+  [1, 18.8, "great", ["family"], "We went to the mountains with grandpa and had tea from a thermos."],
 ];
 
 /**
@@ -62,10 +62,11 @@ export const POST = handler(async (req) => {
   const now = Date.now();
   const localMidnight = Math.floor((now - offsetMs) / 86_400_000) * 86_400_000 + offsetMs;
   await db.insert(moodEntries).values(
-    SAMPLE.map(([daysAgo, hour, mood, tags]) => ({
+    SAMPLE.map(([daysAgo, hour, mood, tags, note]) => ({
       childId: child.id,
       mood,
       tags,
+      note: note ?? null,
       createdAt: new Date(localMidnight - daysAgo * 86_400_000 + hour * 3_600_000),
     })),
   );

@@ -3,14 +3,15 @@
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Breathing } from "@/components/Breathing";
+import { CalmMenu, Exercise, type ExerciseKey } from "@/components/Calm";
 import { MoodFace } from "@/components/MoodFace";
 import { PinPad } from "@/components/PinPad";
 import { FormError, Loading, Wash } from "@/components/ui";
 import { api, type Child } from "@/lib/api";
-import { MOODS, MOOD_KEYS, TAGS, type MoodKey } from "@/lib/moods";
+import { MOODS, MOOD_KEYS, NOTE_MAX, TAGS, type MoodKey } from "@/lib/moods";
+import { needsAdultAttention } from "@/lib/safety";
 
-type Step = "mood" | "tags" | "saved" | "breathe" | "handback";
+type Step = "mood" | "tags" | "note" | "saved" | "calm" | "exercise" | "handback";
 
 /** Child mode: the check-in a child does on the parent's phone. */
 export default function ChildMode() {
@@ -20,6 +21,8 @@ export default function ChildMode() {
   const [step, setStep] = useState<Step>("mood");
   const [mood, setMood] = useState<MoodKey | null>(null);
   const [tags, setTags] = useState<string[]>([]);
+  const [note, setNote] = useState("");
+  const [exercise, setExercise] = useState<ExerciseKey>("breathe");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [pinOpen, setPinOpen] = useState(false);
@@ -30,12 +33,13 @@ export default function ChildMode() {
       .catch(() => router.replace("/home"));
   }, [router]);
 
-  const save = async (withTags: string[]) => {
+  const save = async (withNote: string) => {
     if (!mood) return;
     setSaving(true);
     setError("");
     try {
-      await api("/api/moods", { body: { mood, tags: withTags } });
+      await api("/api/moods", { body: { mood, tags, note: withNote } });
+      setNote(withNote);
       setStep("saved");
     } catch (err) {
       setError((err as Error).message);
@@ -47,6 +51,7 @@ export default function ChildMode() {
   const restart = () => {
     setMood(null);
     setTags([]);
+    setNote("");
     setStep("mood");
   };
 
@@ -68,7 +73,7 @@ export default function ChildMode() {
   return (
     <main className="screen">
       <Wash
-        mood={step === "handback" ? null : step === "breathe" ? child.color : mood}
+        mood={step === "handback" ? null : step === "calm" || step === "exercise" ? child.color : mood}
         strength={step === "mood" ? 16 : 12}
       />
 
@@ -148,12 +153,44 @@ export default function ChildMode() {
               })}
             </div>
             <div className="mt-auto flex flex-col gap-2 pt-6">
+              <button className="btn btn-primary" onClick={() => setStep("note")}>
+                Next
+              </button>
+              <button className="btn btn-text self-center" onClick={() => setStep("mood")}>
+                Change my feeling
+              </button>
+            </div>
+          </motion.section>
+        )}
+
+        {step === "note" && mood && (
+          <motion.section key="note" {...slide} transition={{ duration: 0.3 }} className="flex flex-1 flex-col">
+            <div className="mt-2 flex justify-center">
+              <MoodFace mood={mood} size={88} />
+            </div>
+            <h1 className="font-display mt-4 text-center text-[30px] leading-[1.15]">Want to say more?</h1>
+            <p className="mt-2 text-center text-[16px] text-ink-2">Write anything you like. Your grown-up can read this.</p>
+            <label htmlFor="note" className="sr-only">
+              Your note
+            </label>
+            <textarea
+              id="note"
+              value={note}
+              onChange={(e) => setNote(e.target.value.slice(0, NOTE_MAX))}
+              rows={5}
+              placeholder="Today I…"
+              className="field-area font-display mt-6 w-full resize-none rounded-3xl bg-surface p-5 text-[19px] leading-snug text-ink ring-1 ring-line placeholder:text-ink-3"
+            />
+            <p className="mt-2 text-right text-[13px] text-ink-2 tabular-nums" aria-live="polite">
+              {note.length > NOTE_MAX - 60 ? `${NOTE_MAX - note.length} characters left` : "\u00a0"}
+            </p>
+            <div className="mt-auto flex flex-col gap-2 pt-4">
               <FormError message={error} />
-              <button className="btn btn-primary" disabled={saving} onClick={() => save(tags)}>
+              <button className="btn btn-primary" disabled={saving || !note.trim()} onClick={() => save(note)}>
                 {saving ? "Saving…" : "Save my check-in"}
               </button>
-              <button className="btn btn-text self-center" onClick={() => setStep("mood")} disabled={saving}>
-                Change my feeling
+              <button className="btn btn-text self-center" disabled={saving} onClick={() => save("")}>
+                Skip and save
               </button>
             </div>
           </motion.section>
@@ -163,16 +200,28 @@ export default function ChildMode() {
           <motion.section key="saved" {...slide} transition={{ duration: 0.3 }} className="flex flex-1 flex-col text-center">
             <div className="flex flex-1 flex-col items-center justify-center">
               <MoodFace mood={mood} size={180} />
-              <h1 className="font-display mt-6 text-[34px] leading-tight">Saved. Thank you!</h1>
-              <p className="mt-3 max-w-[30ch] text-[17px] text-ink-2 text-pretty">
-                {mood === "low" || mood === "upset"
-                  ? "Big feelings are easier with slow breaths. Want to try one minute together?"
-                  : "Want to take one slow, calm minute before you go?"}
-              </p>
+              {needsAdultAttention(note) ? (
+                <>
+                  <h1 className="font-display mt-6 text-[32px] leading-tight">Thank you for telling me</h1>
+                  <p className="mt-3 max-w-[32ch] text-[17px] text-ink-2 text-pretty">
+                    What you wrote sounds really important. Please tell your grown-up, a teacher or the school
+                    psychologist about it today. You don&apos;t have to deal with it alone.
+                  </p>
+                </>
+              ) : (
+                <>
+                  <h1 className="font-display mt-6 text-[34px] leading-tight">Saved. Thank you!</h1>
+                  <p className="mt-3 max-w-[30ch] text-[17px] text-ink-2 text-pretty">
+                    {mood === "low" || mood === "upset"
+                      ? "Big feelings get smaller when we slow down. Want to try something calming?"
+                      : "Want to take a calm minute before you go?"}
+                  </p>
+                </>
+              )}
             </div>
             <div className="flex flex-col gap-3">
-              <button className="btn btn-primary" onClick={() => setStep("breathe")}>
-                Breathe for a minute
+              <button className="btn btn-primary" onClick={() => setStep("calm")}>
+                Find some calm
               </button>
               <button className="btn btn-quiet" onClick={() => setStep("handback")}>
                 I&apos;m done
@@ -181,9 +230,30 @@ export default function ChildMode() {
           </motion.section>
         )}
 
-        {step === "breathe" && (
-          <motion.section key="breathe" {...slide} transition={{ duration: 0.3 }} className="flex flex-1 flex-col">
-            <Breathing tint={child.color} finishLabel="I'm done" onFinish={() => setStep("handback")} />
+        {step === "calm" && (
+          <motion.section key="calm" {...slide} transition={{ duration: 0.3 }} className="flex flex-1 flex-col">
+            <h1 className="font-display mt-4 mb-6 text-center text-[32px] leading-tight">Pick something calming</h1>
+            <CalmMenu
+              onPick={(x) => {
+                setExercise(x);
+                setStep("exercise");
+              }}
+            />
+            <button className="btn btn-text mt-auto self-center" onClick={() => setStep("handback")}>
+              I&apos;m done
+            </button>
+          </motion.section>
+        )}
+
+        {step === "exercise" && (
+          <motion.section key="exercise" {...slide} transition={{ duration: 0.3 }} className="flex flex-1 flex-col">
+            <button onClick={() => setStep("calm")} className="-ml-2 inline-flex h-11 items-center gap-1 self-start px-2 text-[15px] font-medium text-ink-2">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                <path d="m15 18-6-6 6-6" />
+              </svg>
+              Pick another
+            </button>
+            <Exercise which={exercise} tint={child.color} finishLabel="I'm done" onFinish={() => setStep("handback")} />
           </motion.section>
         )}
 
@@ -232,6 +302,8 @@ export default function ChildMode() {
                   onComplete={async (pin) => {
                     try {
                       await api("/api/child-mode/exit", { body: { pin } });
+                      setPinOpen(false);
+                      restart();
                       router.replace("/home");
                     } catch (err) {
                       return (err as Error).message;

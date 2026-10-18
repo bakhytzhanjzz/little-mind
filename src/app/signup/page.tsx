@@ -26,6 +26,7 @@ export default function Signup() {
         },
       });
       router.replace("/setup");
+      setBusy(false);
     } catch (err) {
       setError((err as Error).message);
       setBusy(false);

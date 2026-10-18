@@ -56,17 +56,24 @@ export default function History() {
               <h2 className="eyebrow mb-2">{dayLabel(g.date)}</h2>
               <ul className="card divide-y divide-line">
                 {g.items.map((e) => (
-                  <li key={e.id} className="flex items-center gap-3.5 px-4 py-3">
-                    <MoodFace mood={e.mood} size={40} />
-                    <div className="min-w-0 flex-1">
-                      <p className="text-[16px] font-semibold">{MOODS[e.mood].label}</p>
-                      <p className="truncate text-[14px] text-ink-2">
-                        {e.tags.length ? e.tags.map(tagLabel).join(" · ") : "No topic picked"}
-                      </p>
+                  <li key={e.id} className="px-4 py-3">
+                    <div className="flex items-center gap-3.5">
+                      <MoodFace mood={e.mood} size={40} />
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[16px] font-semibold">{MOODS[e.mood].label}</p>
+                        <p className="truncate text-[14px] text-ink-2">
+                          {e.tags.length ? e.tags.map(tagLabel).join(" · ") : "No topic picked"}
+                        </p>
+                      </div>
+                      <time className="text-[14px] text-ink-2 tabular-nums" dateTime={e.createdAt}>
+                        {timeLabel(new Date(e.createdAt))}
+                      </time>
                     </div>
-                    <time className="text-[14px] text-ink-2 tabular-nums" dateTime={e.createdAt}>
-                      {timeLabel(new Date(e.createdAt))}
-                    </time>
+                    {e.note && (
+                      <p className="font-display mt-2.5 ml-[54px] rounded-2xl bg-bg px-3.5 py-2.5 text-[16px] leading-snug whitespace-pre-line text-ink">
+                        {e.note}
+                      </p>
+                    )}
                   </li>
                 ))}
               </ul>
