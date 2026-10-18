@@ -1,69 +1,73 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { MoodFace } from "@/components/MoodFace";
+import { FormError, Wash, Wordmark } from "@/components/ui";
+import { api } from "@/lib/api";
+import { MOODS, MOOD_KEYS } from "@/lib/moods";
+
+export default function Welcome() {
+  const router = useRouter();
+  const [i, setI] = useState(1);
+  const [demoBusy, setDemoBusy] = useState(false);
+  const [error, setError] = useState("");
+  const mood = MOOD_KEYS[i];
+
+  useEffect(() => {
+    const id = setInterval(() => setI((n) => (n + 1) % MOOD_KEYS.length), 2400);
+    return () => clearInterval(id);
+  }, []);
+
+  const tryDemo = async () => {
+    setDemoBusy(true);
+    setError("");
+    try {
+      await api("/api/demo", { body: { tzOffset: new Date().getTimezoneOffset() } });
+      router.replace("/home");
+    } catch (e) {
+      setError((e as Error).message);
+      setDemoBusy(false);
+    }
+  };
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+    <main className="screen">
+      <Wash mood={mood} strength={12} />
+      <header className="flex h-11 items-center">
+        <Wordmark />
+      </header>
+
+      <section className="flex flex-1 flex-col items-center justify-center py-6 text-center">
+        <MoodFace mood={mood} size={220} />
+        <p className="font-display mt-3 h-8 text-[22px] text-ink-2" aria-hidden>
+          {MOODS[mood].label}
+        </p>
+        <h1 className="font-display mt-6 text-[34px] leading-[1.1] text-balance">
+          A small daily check&#8209;in for big feelings
+        </h1>
+        <p className="mt-4 max-w-[34ch] text-[17px] leading-relaxed text-ink-2 text-pretty">
+          Your child picks how they feel in under two minutes. You see how their week is going, privately, on your
+          phone.
+        </p>
+      </section>
+
+      <div className="flex flex-col gap-3">
+        <Link href="/signup" className="btn btn-primary">
+          Create a parent account
+        </Link>
+        <Link href="/login" className="btn btn-quiet">
+          Log in
+        </Link>
+        <button className="btn btn-text self-center" onClick={tryDemo} disabled={demoBusy}>
+          {demoBusy ? "Opening the demo…" : "Try a demo with sample data"}
+        </button>
+        <FormError message={error} />
+        <p className="mt-2 text-center text-[13px] leading-snug text-ink-2">
+          Little Mind+ helps families talk about feelings. It isn&apos;t a medical or diagnostic tool.
+        </p>
+      </div>
+    </main>
   );
 }

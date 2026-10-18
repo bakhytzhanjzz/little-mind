@@ -6,12 +6,20 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "icons": "tsx scripts/icons.mts"
   },
   "dependencies": {
+    "@electric-sql/pglite": "^0.5.10",
+    "@neondatabase/serverless": "^1.2.0",
+    "bcryptjs": "^3.0.3",
+    "drizzle-orm": "^0.45.4",
+    "jose": "^6.2.12",
+    "motion": "^14.3.0",
     "next": "16.4.2",
     "react": "19.3.0",
-    "react-dom": "19.3.0"
+    "react-dom": "19.3.0",
+    "server-only": "^0.0.1"
   },
   "devDependencies": {
     "@tailwindcss/turbopack": "^4",
@@ -20,7 +28,9 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.4.2",
+    "sharp": "^0.35.5",
     "tailwindcss": "^4",
+    "tsx": "^4.23.15",
     "typescript": "^5"
   }
 }

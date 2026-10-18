@@ -1,26 +1,121 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+  --bg: #f2f3f7;
+  --surface: #ffffff;
+  --ink: #1b1e33;
+  --ink-2: #565b75;
+  --ink-3: #9a9eb4;
+  --line: #e2e4ec;
+  --danger: #b4372c;
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  /* Mood hues — validated as a categorical set against the light surface. */
+  --mood-great: #c98712;
+  --mood-good: #3d9a62;
+  --mood-okay: #56b0e4;
+  --mood-low: #5640a8;
+  --mood-upset: #e0594e;
+
+  color-scheme: light;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --bg: #16182a;
+    --surface: #1f2238;
+    --ink: #eceef7;
+    --ink-2: #a4a8c2;
+    --ink-3: #6a6f8c;
+    --line: #2c3050;
+    --danger: #ff8a7e;
+
+    /* Separate steps for dark, validated against the dark surface. */
+    --mood-great: #bc8628;
+    --mood-good: #3c9862;
+    --mood-okay: #4e9bd2;
+    --mood-low: #6a55c2;
+    --mood-upset: #d55a4e;
+
+    color-scheme: dark;
   }
 }
 
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+  --color-line: var(--line);
+  --color-danger: var(--danger);
+  --font-sans: var(--font-figtree);
+  --font-display: var(--font-shantell);
+}
+
+html {
+  -webkit-tap-highlight-color: transparent;
+  text-size-adjust: 100%;
+}
+
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+  min-height: 100dvh;
+  transition: background-color 700ms ease;
+}
+
+/* Shantell Sans is the child-facing voice: a touch informal, never loud. */
+.font-display {
+  font-variation-settings: "INFM" 40, "BNCE" 20;
+  letter-spacing: -0.01em;
+}
+
+:focus-visible {
+  outline: 2.5px solid var(--ink);
+  outline-offset: 3px;
+}
+
+@layer components {
+  .screen {
+    @apply mx-auto flex min-h-dvh w-full max-w-[440px] flex-col px-5;
+    padding-top: max(env(safe-area-inset-top), 20px);
+    padding-bottom: max(env(safe-area-inset-bottom), 24px);
+  }
+
+  .btn {
+    @apply inline-flex h-14 w-full items-center justify-center gap-2 rounded-full px-6 text-[17px] font-semibold transition-[transform,opacity,background-color] duration-150 active:scale-[0.98] disabled:opacity-40 disabled:active:scale-100;
+  }
+  .btn-primary {
+    @apply bg-ink text-bg;
+  }
+  .btn-quiet {
+    @apply bg-surface text-ink ring-1 ring-line;
+  }
+  .btn-text {
+    @apply h-11 w-auto px-3 text-[15px] font-medium text-ink-2;
+  }
+
+  .field {
+    @apply h-14 w-full rounded-2xl bg-surface px-4 text-[17px] text-ink ring-1 ring-line outline-none transition-shadow placeholder:text-ink-3 focus:ring-2 focus:ring-ink;
+  }
+  .label {
+    @apply mb-2 block text-sm font-medium text-ink-2;
+  }
+
+  .card {
+    @apply rounded-3xl bg-surface ring-1 ring-line;
+  }
+
+  .eyebrow {
+    @apply text-[13px] font-semibold uppercase tracking-[0.08em] text-ink-2;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
 }
